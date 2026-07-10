@@ -1,4 +1,6 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter_dio_package/flutter_dio_package.dart';
+import 'package:flutter_dio_package/models/metadata.dart';
 
 /// Standard API response model
 ///
@@ -7,36 +9,36 @@ class ApiResponse<T> extends Equatable {
   const ApiResponse({
     required this.success,
     this.data,
-    this.message,
-    this.errors,
+    this.error,
+    this.metadata,
   });
 
   final bool success;
   final T? data;
-  final String? message;
-  final List<String>? errors;
+  final ApiError? error;
+  final Metadata? metadata;
 
-  factory ApiResponse.fromJson(
-    Map<String, dynamic> json,
-    T Function(dynamic)? fromJsonT,
+  factory ApiResponse.fromMap(
+    Map<String, dynamic> map,
+    T Function(Map<String, dynamic>)? fromMapT,
   ) {
     return ApiResponse<T>(
-      success: json['success'] ?? true,
-      data: json['data'] != null && fromJsonT != null ? fromJsonT(json['data']) : json['data'] as T?,
-      message: json['message'],
-      errors: json['errors'] != null ? List<String>.from(json['errors']) : null,
+      success: map['success'] ?? true,
+      data: map['data'] != null && fromMapT != null ? fromMapT(map['data']) : map['data'] as T?,
+      error: map['error'] != null ? ApiError.fromJson(map['error']) : null,
+      metadata: map['metadata'] != null ? Metadata.fromMap(map['metadata']) : null,
     );
   }
 
-  Map<String, dynamic> toJson(Map<String, dynamic> Function(T)? toJsonT) {
+  Map<String, dynamic> toMap(Map<String, dynamic> Function(T)? toMapT) {
     return {
       'success': success,
-      'data': data != null && toJsonT != null ? toJsonT(data as T) : data,
-      'message': message,
-      'errors': errors,
+      'data': data != null && toMapT != null ? toMapT(data as T) : data,
+      'error': error?.toJson(),
+      'metadata': metadata?.toMap(),
     };
   }
 
   @override
-  List<Object?> get props => [success, data, message, errors];
+  List<Object?> get props => [success, data, error, metadata];
 }

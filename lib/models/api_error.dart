@@ -6,13 +6,13 @@ import 'package:equatable/equatable.dart';
 class ApiError extends Equatable {
   const ApiError({
     required this.message,
-    this.code,
+    required this.code,
     this.errors,
     this.statusCode,
   });
 
   final String message;
-  final String? code;
+  final String code;
   final Map<String, dynamic>? errors;
   final int? statusCode;
 
@@ -20,8 +20,7 @@ class ApiError extends Equatable {
     return ApiError(
       message: json['message'] ?? 'An error occurred',
       code: json['code'],
-      errors: json['errors'],
-      statusCode: json['status_code'],
+      errors: json['details'],
     );
   }
 
