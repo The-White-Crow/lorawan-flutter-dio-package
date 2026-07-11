@@ -14,14 +14,14 @@ class Metadata extends Equatable {
   Map<String, dynamic> toMap() {
     return {
       'request_id': requestId,
-      'timestamp': timestamp.millisecondsSinceEpoch,
+      'timestamp': timestamp,
     };
   }
 
   factory Metadata.fromMap(Map<String, dynamic> map) {
     return Metadata(
       requestId: map['request_id'] ?? '',
-      timestamp: DateTime.fromMillisecondsSinceEpoch(map['timestamp']),
+      timestamp: DateTime.parse(map['timestamp'] as String),
     );
   }
 
