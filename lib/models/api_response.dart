@@ -30,6 +30,18 @@ class ApiResponse<T> extends Equatable {
     );
   }
 
+  factory ApiResponse.fromList(
+    Map<String, dynamic> map,
+    T Function(List<Map<String, dynamic>>) fromListT,
+  ) {
+    return ApiResponse<T>(
+      success: map['success'] ?? true,
+      data: map['data'] != null ? fromListT(map['data'] as List<Map<String, dynamic>>) : null,
+      error: map['error'] != null ? ApiError.fromJson(map['error']) : null,
+      metadata: map['metadata'] != null ? Metadata.fromMap(map['metadata']) : null,
+    );
+  }
+
   Map<String, dynamic> toMap(Map<String, dynamic> Function(T)? toMapT) {
     return {
       'success': success,
