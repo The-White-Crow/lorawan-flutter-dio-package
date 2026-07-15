@@ -8,6 +8,15 @@ class Metadata extends Equatable {
     required this.timestamp,
   });
 
+  factory Metadata.fromMap(Map<String, dynamic> map) {
+    return Metadata(
+      requestId: map['request_id'] as String? ?? '',
+      timestamp: DateTime.parse(map['timestamp'] as String),
+    );
+  }
+
+  factory Metadata.fromJson(String source) => Metadata.fromMap(json.decode(source) as Map<String, dynamic>);
+
   final String requestId;
   final DateTime timestamp;
 
@@ -18,16 +27,7 @@ class Metadata extends Equatable {
     };
   }
 
-  factory Metadata.fromMap(Map<String, dynamic> map) {
-    return Metadata(
-      requestId: map['request_id'] ?? '',
-      timestamp: DateTime.parse(map['timestamp'] as String),
-    );
-  }
-
   String toJson() => json.encode(toMap());
-
-  factory Metadata.fromJson(String source) => Metadata.fromMap(json.decode(source));
 
   @override
   List<Object?> get props => [requestId, timestamp];

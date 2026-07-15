@@ -13,20 +13,15 @@ class ApiResponse<T> extends Equatable {
     this.metadata,
   });
 
-  final bool success;
-  final T? data;
-  final ApiError? error;
-  final Metadata? metadata;
-
   factory ApiResponse.fromMap(
     Map<String, dynamic> map,
     T Function(Map<String, dynamic>)? fromMapT,
   ) {
     return ApiResponse<T>(
-      success: map['success'] ?? true,
-      data: map['data'] != null && fromMapT != null ? fromMapT(map['data']) : map['data'] as T?,
-      error: map['error'] != null ? ApiError.fromJson(map['error']) : null,
-      metadata: map['metadata'] != null ? Metadata.fromMap(map['metadata']) : null,
+      success: map['success'] as bool? ?? true,
+      data: map['data'] != null && fromMapT != null ? fromMapT(map['data'] as Map<String, dynamic>) : map['data'] as T?,
+      error: map['error'] != null ? ApiError.fromJson(map['error'] as Map<String, dynamic>) : null,
+      metadata: map['metadata'] != null ? Metadata.fromMap(map['metadata'] as Map<String, dynamic>) : null,
     );
   }
 
@@ -35,12 +30,17 @@ class ApiResponse<T> extends Equatable {
     T Function(List<Map<String, dynamic>>) fromListT,
   ) {
     return ApiResponse<T>(
-      success: map['success'] ?? true,
+      success: map['success'] as bool? ?? true,
       data: map['data'] != null ? fromListT(map['data'] as List<Map<String, dynamic>>) : null,
-      error: map['error'] != null ? ApiError.fromJson(map['error']) : null,
-      metadata: map['metadata'] != null ? Metadata.fromMap(map['metadata']) : null,
+      error: map['error'] != null ? ApiError.fromJson(map['error'] as Map<String, dynamic>) : null,
+      metadata: map['metadata'] != null ? Metadata.fromMap(map['metadata'] as Map<String, dynamic>) : null,
     );
   }
+
+  final bool success;
+  final T? data;
+  final ApiError? error;
+  final Metadata? metadata;
 
   Map<String, dynamic> toMap(Map<String, dynamic> Function(T)? toMapT) {
     return {

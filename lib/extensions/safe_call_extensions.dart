@@ -1,10 +1,9 @@
-import 'package:flutter_core_package/flutter_core_package.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
-
-import '../core/request_type.dart';
-import '../handlers/error_handler.dart';
-import '../models/response_code.dart';
+import 'package:flutter_core_package/flutter_core_package.dart';
+import 'package:flutter_dio_package/core/request_type.dart';
+import 'package:flutter_dio_package/handlers/error_handler.dart';
+import 'package:flutter_dio_package/models/response_code.dart';
 
 /// Extension methods for Dio to perform safe HTTP calls
 ///
@@ -28,18 +27,24 @@ extension SafeCallExtensions on Dio {
     Options? options,
   }) async {
     // Ensure that either mapper or listMapper is provided
-    assert((mapper != null) || (listMapper != null), 'Either mapper or listMapper must be provided');
+    assert(
+      (mapper != null) || (listMapper != null),
+      'Either mapper or listMapper must be provided',
+    );
 
     try {
       // Perform the HTTP request
-      Response response = await fetch(
+      final response = await fetch<dynamic>(
         RequestOptions(
           baseUrl: this.options.baseUrl,
           contentType: this.options.contentType,
           connectTimeout: this.options.connectTimeout,
           receiveTimeout: this.options.receiveTimeout,
           sendTimeout: this.options.sendTimeout,
-          headers: {...this.options.headers, if (options != null && options.headers != null) ...options.headers!},
+          headers: {
+            ...this.options.headers,
+            if (options != null && options.headers != null) ...options.headers!,
+          },
           method: method.stringValue,
           path: endPoint,
           data: data,
@@ -49,12 +54,14 @@ extension SafeCallExtensions on Dio {
           onReceiveProgress: onReceiveProgress,
           extra: options?.extra ?? this.options.extra,
           responseType: options?.responseType ?? this.options.responseType,
-          validateStatus: options?.validateStatus ?? this.options.validateStatus,
+          validateStatus:
+              options?.validateStatus ?? this.options.validateStatus,
         ),
       );
 
       // Handle success response
-      if (response.statusCode == ResponseCode.success || response.statusCode == ResponseCode.created) {
+      if (ResponseCode.isSuccessful(response.statusCode) &&
+          !DioErrorHandler.isFailureResponse(response)) {
         if (mapper != null) {
           // Use mapper for single object
           if (response.data is Map<String, dynamic>) {
@@ -74,14 +81,10 @@ extension SafeCallExtensions on Dio {
       }
 
       // Handle error response
-      return Left(
-        DioErrorHandler.handle(
-          DioException(requestOptions: response.requestOptions, response: response, type: DioExceptionType.badResponse),
-        ),
-      );
-    } catch (exception) {
+      return Left(DioErrorHandler.handleResponse(response));
+    } catch (exception, stackTrace) {
       // Handle exception
-      return Left(DioErrorHandler.handle(exception));
+      return Left(DioErrorHandler.handle(exception, stackTrace: stackTrace));
     }
   }
 }

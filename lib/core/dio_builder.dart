@@ -1,9 +1,9 @@
-import 'package:flutter_core_package/flutter_core_package.dart';
 import 'package:dio/dio.dart';
-
-import '../interceptors/error_interceptor.dart';
-import '../interceptors/jwt_interceptor.dart';
-import '../interceptors/logging_interceptor.dart';
+import 'package:flutter_core_package/flutter_core_package.dart';
+import 'package:flutter_dio_package/handlers/error_handler.dart';
+import 'package:flutter_dio_package/interceptors/error_interceptor.dart';
+import 'package:flutter_dio_package/interceptors/jwt_interceptor.dart';
+import 'package:flutter_dio_package/interceptors/logging_interceptor.dart';
 
 /// A builder class for configuring Dio instances with predefined options.
 ///
@@ -29,6 +29,8 @@ class DioBuilder {
   /// [refreshTokenCallback] - Callback function for refreshing tokens
   /// [loggingTag] - Tag for logging (default: 'Dio')
   /// [onErrorCallback] - Callback function called when an error occurs
+  /// [errorMessageResolver] - Optional application-specific user message resolver
+  /// [failureTypeResolver] - Optional application-specific FailureType resolver
   Dio getDio({
     required String baseUrl,
     bool hasToken = false,
@@ -48,31 +50,38 @@ class DioBuilder {
     Future<TokenPair?> Function(String refreshToken)? refreshTokenCallback,
     String loggingTag = 'Dio',
     void Function(Failure failure)? onErrorCallback,
+    ApiErrorMessageResolver? errorMessageResolver,
+    ApiFailureTypeResolver? failureTypeResolver,
   }) {
     // Validate token configuration
     if (hasToken && storageService == null && tokenGetter == null) {
-      throw ArgumentError('Either storageService or tokenGetter must be provided when hasToken is true');
+      throw ArgumentError(
+        'Either storageService or tokenGetter must be provided when hasToken is true',
+      );
     }
 
-    // Create a new Dio instance
-    Dio dio = Dio();
-
-    // Set the base options for the Dio instance
-    dio.options = _getBaseOptions(
-      baseUrl: baseUrl,
-      queryParameters: queryParameters,
-      contentType: contentType,
-      extra: extra,
-      headers: headers,
-      responseType: responseType,
-      connectTimeout: connectTimeout,
-      receiveTimeout: receiveTimeout,
-      sendTimeout: sendTimeout,
-    );
+    final dio = Dio()
+      ..options = _getBaseOptions(
+        baseUrl: baseUrl,
+        queryParameters: queryParameters,
+        contentType: contentType,
+        extra: extra,
+        headers: headers,
+        responseType: responseType,
+        connectTimeout: connectTimeout,
+        receiveTimeout: receiveTimeout,
+        sendTimeout: sendTimeout,
+      );
 
     // Add error handling interceptor first (if enabled)
     if (enableErrorHandling) {
-      dio.interceptors.add(ErrorInterceptor(onErrorCallback: onErrorCallback));
+      dio.interceptors.add(
+        ErrorInterceptor(
+          onErrorCallback: onErrorCallback,
+          messageResolver: errorMessageResolver,
+          failureTypeResolver: failureTypeResolver,
+        ),
+      );
     }
 
     // Add logging interceptor (if enabled)
@@ -80,12 +89,8 @@ class DioBuilder {
       dio.interceptors.add(
         LoggingInterceptor(
           tag: loggingTag,
-          request: true,
-          requestHeader: true,
-          requestBody: true,
-          responseHeader: true,
-          responseBody: true,
-          error: true,
+          requestHeader: false,
+          responseHeader: false,
         ),
       );
     }
@@ -118,13 +123,15 @@ class DioBuilder {
     Duration? receiveTimeout,
     Duration? sendTimeout,
   }) {
-    final defaultTimeout = const Duration(seconds: 60);
+    const defaultTimeout = Duration(seconds: 60);
 
     return BaseOptions(
       baseUrl: baseUrl,
       contentType: contentType ?? Headers.jsonContentType,
       responseType: responseType,
-      headers: headers ?? {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      headers:
+          headers ??
+          {'Content-Type': 'application/json', 'Accept': 'application/json'},
       extra: extra,
       queryParameters: queryParameters,
       connectTimeout: connectTimeout ?? defaultTimeout,

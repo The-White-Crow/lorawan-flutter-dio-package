@@ -1,5 +1,7 @@
-import 'package:flutter_core_package/flutter_core_package.dart';
+// ignore_for_file: avoid_redundant_argument_values
+
 import 'package:dio/dio.dart';
+import 'package:flutter_core_package/flutter_core_package.dart';
 
 /// Logging interceptor for Dio
 ///
@@ -52,7 +54,7 @@ class LoggingInterceptor extends Interceptor {
 
     if (request) {
       'method: ${options.method}'.log(tag: tag, level: LogLevel.debug);
-      'responseType: ${options.responseType.toString()}'.log(tag: tag, level: LogLevel.debug);
+      'responseType: ${options.responseType}'.log(tag: tag, level: LogLevel.debug);
       'followRedirects: ${options.followRedirects}'.log(tag: tag, level: LogLevel.debug);
       'connectTimeout: ${options.connectTimeout?.inSeconds ?? 0}'.log(tag: tag, level: LogLevel.debug);
       'receiveTimeout: ${options.receiveTimeout?.inSeconds ?? 0}'.log(tag: tag, level: LogLevel.debug);
@@ -74,7 +76,7 @@ class LoggingInterceptor extends Interceptor {
   }
 
   @override
-  void onResponse(Response response, ResponseInterceptorHandler handler) {
+  void onResponse(Response<dynamic> response, ResponseInterceptorHandler handler) {
     '*** DioResponse ***'.log(tag: tag, level: LogLevel.debug);
     'uri: ${response.requestOptions.uri}'.log(tag: tag, level: LogLevel.debug);
 

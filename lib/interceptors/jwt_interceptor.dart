@@ -1,5 +1,6 @@
-import 'package:flutter_core_package/flutter_core_package.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_core_package/flutter_core_package.dart';
+import 'package:flutter_dio_package/flutter_dio_package.dart';
 
 /// Token pair model for access and refresh tokens
 class TokenPair {
@@ -27,6 +28,7 @@ class JwtInterceptor extends QueuedInterceptor {
   /// [headerKey] - Header key for authorization (default: 'Authorization')
   /// [tokenPrefix] - Prefix for token in header (default: 'Bearer')
   JwtInterceptor({
+    required Dio dio,
     IStorageService? storageService,
     String? Function()? tokenGetter,
     this.refreshTokenEndpoint,
@@ -34,7 +36,6 @@ class JwtInterceptor extends QueuedInterceptor {
     this.shouldClearBeforeReset = true,
     this.headerKey = 'Authorization',
     this.tokenPrefix = 'Bearer',
-    required Dio dio,
   }) : _storageService = storageService,
        _tokenGetter = tokenGetter {
     assert(storageService != null || tokenGetter != null, 'Either storageService or tokenGetter must be provided');
@@ -104,7 +105,7 @@ class JwtInterceptor extends QueuedInterceptor {
 
       if (isAccessValid) {
         // If access token is still valid, retry the previous request
-        final previousRequest = await _retry(err.requestOptions);
+        final previousRequest = await _retry<dynamic>(err.requestOptions);
         return handler.resolve(previousRequest);
       } else {
         // If the access token is invalid, refresh it and retry the request
@@ -114,7 +115,7 @@ class JwtInterceptor extends QueuedInterceptor {
           return handler.reject(RevokeTokenException(requestOptions: err.requestOptions));
         }
 
-        final previousRequest = await _retry(err.requestOptions);
+        final previousRequest = await _retry<dynamic>(err.requestOptions);
         return handler.resolve(previousRequest);
       }
     } on RevokeTokenException {
@@ -164,7 +165,7 @@ class JwtInterceptor extends QueuedInterceptor {
   }
 
   /// Check if the token pair should be refreshed based on the response
-  bool _shouldRefresh(Response? response) => response?.statusCode == 401;
+  bool _shouldRefresh(Response<dynamic>? response) => response?.statusCode == 401;
 
   /// Build headers for the request including the access token
   Future<Map<String, dynamic>> _buildHeaders() async {
@@ -191,11 +192,11 @@ class JwtInterceptor extends QueuedInterceptor {
         // Use default refresh endpoint
         _refreshClient.options = _refreshClient.options.copyWith(headers: {'refresh-Token': tokenPair.refreshToken});
 
-        final response = await _refreshClient.post(refreshTokenEndpoint!);
+        final response = await _refreshClient.post<ApiResponse<Map<String, dynamic>>>(refreshTokenEndpoint!);
 
         newTokenPair = TokenPair(
-          accessToken: response.data['accessToken'] ?? response.data['access_token'],
-          refreshToken: response.data['refreshToken'] ?? response.data['refresh_token'],
+          accessToken: (response.data!.data?['access_token'] as String?) ?? '',
+          refreshToken: (response.data!.data?['refresh_token'] as String?) ?? '',
         );
       } else {
         throw RevokeTokenException(requestOptions: options);
