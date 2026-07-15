@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_core_package/flutter_core_package.dart';
 import 'package:flutter_dio_package/handlers/error_handler.dart';
 import 'package:flutter_dio_package/interceptors/error_interceptor.dart';
@@ -108,6 +109,18 @@ class DioBuilder {
       );
     }
 
+    if (!kIsWeb) return dio;
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          // Browsers cannot apply an upload timeout when there is no body to
+          // upload. Dio's web adapter warns if a positive timeout reaches it.
+          if (options.data == null) options.sendTimeout = Duration.zero;
+          handler.next(options);
+        },
+      ),
+    );
+
     return dio;
   }
 
@@ -129,9 +142,7 @@ class DioBuilder {
       baseUrl: baseUrl,
       contentType: contentType ?? Headers.jsonContentType,
       responseType: responseType,
-      headers:
-          headers ??
-          {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      headers: headers ?? {'Content-Type': 'application/json', 'Accept': 'application/json'},
       extra: extra,
       queryParameters: queryParameters,
       connectTimeout: connectTimeout ?? defaultTimeout,
