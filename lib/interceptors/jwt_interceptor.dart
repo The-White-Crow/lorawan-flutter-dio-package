@@ -190,7 +190,7 @@ class JwtInterceptor extends QueuedInterceptor {
         newTokenPair = await refreshTokenCallback!(tokenPair.refreshToken!);
       } else if (refreshTokenEndpoint != null) {
         // Use default refresh endpoint
-        _refreshClient.options = _refreshClient.options.copyWith(headers: {'refresh-Token': tokenPair.refreshToken});
+        _refreshClient.options = _refreshClient.options.copyWith(headers: {'X-Refresh-Token': tokenPair.refreshToken});
 
         final response = await _refreshClient.post<ApiResponse<Map<String, dynamic>>>(refreshTokenEndpoint!);
 
