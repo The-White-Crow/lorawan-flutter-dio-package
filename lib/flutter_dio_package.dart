@@ -27,4 +27,6 @@ export 'interceptors/logging_interceptor.dart';
 export 'models/api_error.dart';
 export 'models/api_response.dart';
 export 'models/api_result_code.dart';
+export 'models/metadata.dart';
+export 'models/paginated_response.dart';
 export 'models/response_code.dart';

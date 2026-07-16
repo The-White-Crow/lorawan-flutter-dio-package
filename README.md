@@ -128,6 +128,25 @@ final result = await dio.safeCall<List<User>>(
 Every `safeCall` must receive either a `mapper` or a `listMapper` appropriate
 for the response shape.
 
+### Fetch a paginated list
+
+Use `PaginatedResponse<T>` for the standard nested pagination envelope:
+
+```dart
+final result = await dio.safeCall<PaginatedResponse<User>>(
+  '/users?limit=10&offset=0',
+  mapper: (json) => PaginatedResponse<User>.fromMap(json, User.fromMap),
+);
+
+result.fold(
+  (failure) => print(failure.message),
+  (response) {
+    print(response.data.items);
+    print(response.data.hasNext);
+  },
+);
+```
+
 ### Send data
 
 ```dart
