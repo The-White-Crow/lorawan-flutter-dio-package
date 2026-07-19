@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_core_package/flutter_core_package.dart';
-import 'package:flutter_dio_package/flutter_dio_package.dart';
 
 /// Token pair model for access and refresh tokens
 class TokenPair {
@@ -100,24 +99,18 @@ class JwtInterceptor extends QueuedInterceptor {
         return handler.reject(err);
       }
 
-      // Check if access token is valid
       final isAccessValid = await _isAccessTokenValid();
 
-      if (isAccessValid) {
-        // If access token is still valid, retry the previous request
-        final previousRequest = await _retry<dynamic>(err.requestOptions);
-        return handler.resolve(previousRequest);
-      } else {
-        // If the access token is invalid, refresh it and retry the request
+      if (!isAccessValid) {
         final newTokenPair = await _refreshToken(options: err.requestOptions, tokenPair: tokenPair);
 
         if (newTokenPair == null) {
           return handler.reject(RevokeTokenException(requestOptions: err.requestOptions));
         }
-
-        final previousRequest = await _retry<dynamic>(err.requestOptions);
-        return handler.resolve(previousRequest);
       }
+
+      final previousRequest = await _retry<dynamic>(err.requestOptions);
+      return handler.resolve(previousRequest);
     } on RevokeTokenException {
       // Handle session expiration logic in case of revocation
       return handler.reject(err);
@@ -159,9 +152,9 @@ class JwtInterceptor extends QueuedInterceptor {
 
   /// Check if access token is valid (can be overridden)
   Future<bool> _isAccessTokenValid() async {
-    // Default implementation: always return true
-    // Users can override this by providing a custom callback
-    return true;
+    // Default implementation assumes the token is expired once a 401 is received.
+    // Callers can replace this class if they need proactive token validation.
+    return false;
   }
 
   /// Check if the token pair should be refreshed based on the response
@@ -192,11 +185,13 @@ class JwtInterceptor extends QueuedInterceptor {
         // Use default refresh endpoint
         _refreshClient.options = _refreshClient.options.copyWith(headers: {'X-Refresh-Token': tokenPair.refreshToken});
 
-        final response = await _refreshClient.post<ApiResponse<Map<String, dynamic>>>(refreshTokenEndpoint!);
+        final response = await _refreshClient.post<dynamic>(refreshTokenEndpoint!);
+        final responseMap = _asStringMap(response.data);
+        final tokenPayload = responseMap['data'] is Map ? _asStringMap(responseMap['data']) : responseMap;
 
         newTokenPair = TokenPair(
-          accessToken: (response.data!.data?['access_token'] as String?) ?? '',
-          refreshToken: (response.data!.data?['refresh_token'] as String?) ?? '',
+          accessToken: tokenPayload['access_token'] as String? ?? '',
+          refreshToken: tokenPayload['refresh_token'] as String?,
         );
       } else {
         throw RevokeTokenException(requestOptions: options);
@@ -258,5 +253,17 @@ class JwtInterceptor extends QueuedInterceptor {
         listFormat: requestOptions.listFormat,
       ),
     );
+  }
+
+  Map<String, dynamic> _asStringMap(dynamic value) {
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+
+    if (value is Map) {
+      return value.map((key, dynamic item) => MapEntry(key.toString(), item));
+    }
+
+    return <String, dynamic>{};
   }
 }
