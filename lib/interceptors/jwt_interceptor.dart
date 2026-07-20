@@ -185,6 +185,10 @@ class JwtInterceptor extends QueuedInterceptor {
         // Use default refresh endpoint
         _refreshClient.options = _refreshClient.options.copyWith(headers: {'X-Refresh-Token': tokenPair.refreshToken});
 
+        'Sending refresh token request to $refreshTokenEndpoint'.log(
+          tag: 'JwtInterceptor',
+          level: LogLevel.trace,
+        );
         final response = await _refreshClient.post<dynamic>(refreshTokenEndpoint!);
         final responseMap = _asStringMap(response.data);
         final tokenPayload = responseMap['data'] is Map ? _asStringMap(responseMap['data']) : responseMap;
@@ -216,14 +220,23 @@ class JwtInterceptor extends QueuedInterceptor {
       }
 
       return newTokenPair;
-    } catch (_) {
-      // Clear tokens on failure
-      if (_storageService != null) {
-        await _storageService.remove(_accessTokenKey);
-        await _storageService.remove(_refreshTokenKey);
+    } on DioException catch (e, s) {
+      e.log(tag: 'JwtInterceptor', level: LogLevel.error, stackTrace: s);
+      if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
+        await _clearTokens();
+        throw RevokeTokenException(requestOptions: options);
       }
+      rethrow;
+    } catch (e, s) {
+      e.log(tag: 'JwtInterceptor', level: LogLevel.error, stackTrace: s);
+      await _clearTokens();
       throw RevokeTokenException(requestOptions: options);
     }
+  }
+
+  Future<void> _clearTokens() async {
+    await _storageService?.remove(_accessTokenKey);
+    await _storageService?.remove(_refreshTokenKey);
   }
 
   /// Retry the request with the previous options
