@@ -25,6 +25,8 @@ extension SafeCallExtensions on Dio {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
     Options? options,
+    ApiErrorMessageResolver? messageResolver,
+    ApiFailureTypeResolver? failureTypeResolver,
   }) async {
     // Ensure that either mapper or listMapper is provided
     assert(
@@ -54,14 +56,12 @@ extension SafeCallExtensions on Dio {
           onReceiveProgress: onReceiveProgress,
           extra: options?.extra ?? this.options.extra,
           responseType: options?.responseType ?? this.options.responseType,
-          validateStatus:
-              options?.validateStatus ?? this.options.validateStatus,
+          validateStatus: options?.validateStatus ?? this.options.validateStatus,
         ),
       );
 
       // Handle success response
-      if (ResponseCode.isSuccessful(response.statusCode) &&
-          !DioErrorHandler.isFailureResponse(response)) {
+      if (ResponseCode.isSuccessful(response.statusCode) && !DioErrorHandler.isFailureResponse(response)) {
         if (mapper != null) {
           // Use mapper for single object
           if (response.data is Map<String, dynamic>) {
@@ -81,10 +81,23 @@ extension SafeCallExtensions on Dio {
       }
 
       // Handle error response
-      return Left(DioErrorHandler.handleResponse(response));
+      return Left(
+        DioErrorHandler.handleResponse(
+          response,
+          messageResolver: messageResolver,
+          failureTypeResolver: failureTypeResolver,
+        ),
+      );
     } catch (exception, stackTrace) {
       // Handle exception
-      return Left(DioErrorHandler.handle(exception, stackTrace: stackTrace));
+      return Left(
+        DioErrorHandler.handle(
+          exception,
+          stackTrace: stackTrace,
+          messageResolver: messageResolver,
+          failureTypeResolver: failureTypeResolver,
+        ),
+      );
     }
   }
 }
