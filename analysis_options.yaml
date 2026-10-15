@@ -11,11 +11,10 @@ linter:
 
 
 analyzer:
-  plugins:
-    - custom_lint
   exclude:
     - lib/**.g.dart
     - lib/firebase_options**.dart
+    - build/**
   errors:
     inference_failure_on_function_return_type: ignore
     invalid_annotation_target: ignore

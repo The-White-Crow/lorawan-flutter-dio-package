@@ -26,7 +26,6 @@
 .settings/
 .vscode/*
 
-
 # Flutter repo-specific
 /bin/cache/
 /bin/internal/bootstrap.bat
@@ -137,8 +136,6 @@ app.*.symbols
 *.graphql.dart
 /lib/l10n/arb/*.dart
 
-
-
 # firebase configs
 .firebase/
 .firebaserc
@@ -161,8 +158,10 @@ env.*
 !/dev/ci/**/Gemfile.lock
 !.env.env_name.example
 
-
 /gradle.properties
 .puro.json
 
 .assetlinks.json
+
+# FVM Version Cache
+.fvm/
